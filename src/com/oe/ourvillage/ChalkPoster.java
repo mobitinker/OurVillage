@@ -24,7 +24,7 @@ import org.json.JSONObject;
 
 public class ChalkPoster {
 
-	String urlServer = "http://blockchalk.com/api/v0.6/";
+	String urlServer = "http://zeum.blockchalk.com/api/v0.6/";//"http://blockchalk.com/api/v0.6/";
 	String id = "";
 	String TAG = "TAG";
 
@@ -103,11 +103,14 @@ public class ChalkPoster {
 		
 		//URLEncoding
 		String modMsg = "";
+		
     try {
+      
       modMsg = URLEncoder.encode((msg.length() > 0 ? msg : "Picture only"),"UTF-8");
+      
     } catch (UnsupportedEncodingException e) {
         //Error
-        Log.e(TAG," URLEncoder error"+ e);
+        Log.e(TAG," URLEncoder error: "+ e);
     };
 		
 		//mkm This method uses the simple httpclient
@@ -120,6 +123,9 @@ public class ChalkPoster {
 
 			HttpResponse response;
 			response = httpclient.execute(httppost);
+			
+			System.out.println("Response: " + response);
+			Log.d(TAG, ">>>> RESPONSE: "+ response);
 			
 			//Show the response for troubleshooting. Should be XML or JSON
 			String s = EntityUtils.toString(response.getEntity()); 

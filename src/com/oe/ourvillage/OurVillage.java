@@ -28,44 +28,79 @@ import java.io.FileOutputStream;
 public class OurVillage extends Activity implements LocationListener{
 
   private class MsgDialogCallback implements MsgDialog.ReadyListener {
+  
+    ChalkPoster cp = null;
+    FileOutputStream out = null;
+    String chalkID = "";
+    String url = "http://eitc.comze.com/chalk/upload_file.php"; 
+    
 		@Override
 		public void ready(String chalk) {
-			FileOutputStream out = null;
 
 			image.caption = chalk;
 			
 			//Let user know this will take a little time
 			Toast.makeText(OurVillage.this, "Posting to server...", Toast.LENGTH_LONG).show();
 
-			ChalkPoster cp = new ChalkPoster();
+			cp = new ChalkPoster();
 			
 			//TODO mkm Last param is category. If unspecified, BlockChalk puts chalk into 'chatter' category
-			String chalkID = cp.post(chalk, lat, lon, chalkUser, "");
+			chalkID = cp.post(chalk, lat, lon, chalkUser, "");
 			
 			filename = Environment.getExternalStorageDirectory().toString() + "/"+ chalkID + ".jpg";
-			out = null;
-			try {
-				File file = new File(filename);
-				out = new FileOutputStream(file);
-				Bitmap bm = BitmapFactory.decodeByteArray(pictureBuffer, 0, pictureBuffer.length);
-				Bitmap sbm = Bitmap.createScaledBitmap(bm, 640, 480, false);
-				sbm.compress(Bitmap.CompressFormat.JPEG, 40, out);
-				out.close();
-				bm.recycle();
-				sbm.recycle();
-				Log.d(TAG, "dialog done");
-				String url = "http://eitc.comze.com/chalk/upload_file.php";				
-				HttpFileUploader uploader = new HttpFileUploader(url, filename, chalkID);
-				uploader.upload();
-
-				file.delete();
-			} catch(Exception ex) {
-				Log.d(TAG, "dialog problem");
-				
-			}
+			
+			fileAndPostTask(filename);
 			
 			//Display the entered message
-			Toast.makeText(OurVillage.this, chalk, Toast.LENGTH_LONG).show();
+      Toast.makeText(OurVillage.this, chalk, Toast.LENGTH_LONG).show();  
+		}
+		
+		private void fileAndPostTask(String filename){
+      
+      out = null;
+      try {
+        File file = new File(filename);
+        out = new FileOutputStream(file);
+        
+        Bitmap bm = BitmapFactory.decodeByteArray(pictureBuffer, 0, pictureBuffer.length);
+        Bitmap sbm = Bitmap.createScaledBitmap(bm, 640, 480, false);
+        sbm.compress(Bitmap.CompressFormat.JPEG, 40, out);
+        
+        out.close();
+        bm.recycle();
+        sbm.recycle();
+      
+        if (postFileToSite()){
+          Toast.makeText(OurVillage.this, "Post Was Successful", Toast.LENGTH_SHORT).show();
+        }else{
+          Toast.makeText(OurVillage.this, "Error Posting to Site", Toast.LENGTH_LONG).show();  
+        }
+        
+        // HttpFileUploader uploader = new HttpFileUploader(url, filename, chalkID);
+        // uploader.upload();  
+        file.delete();
+        
+      } catch(Exception ex) {
+        Log.d(TAG, "dialog problem");
+        
+      }
+
+		}
+		
+		/*
+		 * Post to site the chalk and image filename
+		 */
+		private boolean postFileToSite(){
+		  try{
+	      
+		    HttpFileUploader uploader = new HttpFileUploader(url, filename, chalkID);
+	      uploader.upload();
+	      
+		  }catch (Exception e){
+		    Log.d(TAG, "Error Posting to image to site");
+		    return false;
+		  }
+		  return true;
 		}
 	}
 
@@ -126,7 +161,6 @@ public class OurVillage extends Activity implements LocationListener{
 
 	private String filename;
 
-	
 	private SQLiteDatabase db;
 	
 	private String bestProvider;
@@ -156,7 +190,7 @@ public class OurVillage extends Activity implements LocationListener{
 			//TODO mkm Some of this could be put in asynch threads
 			//Dialog to get chalk message
 			//TODO mkm would be nice to freeze image taken
-			MsgDialog dialog = new MsgDialog(OurVillage.this, "", new MsgDialogCallback());
+			MsgDialog dialog = new MsgDialog(OurVillage.this, "", lat, lon, new MsgDialogCallback());
 			dialog.show();
 
 			pictureBuffer = data.clone();
@@ -292,7 +326,7 @@ public class OurVillage extends Activity implements LocationListener{
 
 	}
 	//Storing the image data into database
-	//NOT WORKING
+	//NOT WORKING Since not implemented
 	private boolean pushintoDB(Image imag) {
 		try
 		{  
